@@ -20,6 +20,13 @@ Publishing (making available) part of your network to the public Internet is alw
 ## The whitelist
 In order to prevent yourself from being locked out, `PSLogonFailures` allows you to specify a whitelist of individual IPs that it will never block.  You are _strongly_ encouraged to populate this list with at least one IP address.
 
+## Why not just use product X?
+Since I and [Andee](https://twitter.com/zandeez) wrote `PSLogonFailures` I've seen a number of similar solutions become available, so this is a natural question.  I'd suggest PSLogonFailures has the following benefits:
+
+* You can review the code, so you know what it's doing
+* It's free
+* You can modify PSLogonFailures to meet your needs (pull requests and contributions welcomed)
+
 ## Warranty
 Per the license, please be aware this script comes with __no warranty of any kind__ and the authors cannot be held liable for any problems resulting from its use.  The script has been tested on a number of systems, but every system is different.  Please ensure you know what the script will do before you run this script!
 
