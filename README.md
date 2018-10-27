@@ -1,5 +1,5 @@
 # PSLogonFailures
-`PSLogonFailures` is a PowerShell script to help mitigate brute force attacks against remote desktop servers, both those published to the public Internet and those on your internal network.  This script was developed in colaboration with my long-time friend [zandeez](https://github.com/zandeez).
+`PSLogonFailures` is a PowerShell script to help mitigate brute force attacks against remote desktop servers, both those published to the public Internet and those on your internal network.  This script was developed in collaboration with my long-time friend [zandeez](https://github.com/zandeez).
 
 Working in IT, predominantly with Microsoft Windows systems, I noticed a lot brute force attempts trying to login to servers over remote desktop via remote desktop protocol (RDP).  RDP is great for managing Windows servers and workstations but also opens the system up to attack and potential abuse.  On Linux we have tools like [Fail2Ban](https://www.fail2ban.org) to help protect against brute force attacks but I couldn't find something free at the time I initially released this script.  After I started implementing this script at customer sites the number of failed logon attempts (typically overnight) would drop to less than 10% of the pre-implementation value.
 
