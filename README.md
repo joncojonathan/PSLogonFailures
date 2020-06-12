@@ -17,8 +17,8 @@ Publishing (making available) part of your network to the public Internet is alw
 * When publishing your system, restrict it to as small a part of the Internet as possible, for example just one remote IP address or a small selection
 * Only publish the _service_ you intend to access remotely (for example RDP on port TCP 3389)
 
-## The whitelist
-In order to prevent yourself from being locked out, `PSLogonFailures` allows you to specify a whitelist of individual IPs that it will never block.  You are _strongly_ encouraged to populate this list with at least one IP address.
+## The allow list
+In order to prevent yourself from being locked out, `PSLogonFailures` allows you to specify a allow list of individual IPs that it will never block.  You are _strongly_ encouraged to populate this list with at least one IP address.
 
 ## Why not just use product X?
 Since I and [Andee](https://twitter.com/zandeez) wrote `PSLogonFailures` I've seen a number of similar solutions become available, so this is a natural question.  I'd suggest PSLogonFailures has the following benefits:
