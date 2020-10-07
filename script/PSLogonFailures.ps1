@@ -25,10 +25,10 @@ $BlockSMTP = 0 # Set to 1 blocks SMTP traffic on port 25
 $BlockRWW_RDP = 0 # When set to 1, blocks port 4125, used by SBS servers to proxy RDP connections.
 $fwprofile = "Any" # Set to "Any" to apply to all networks (public, domain, private / home)
 
-# Full path to the whitelist, e.g. c:\psl\whitelist.txt :
-$whitelist = 'C:\psl\whitelist.txt'
-# Full path to blacklist e.g: c:\psl\blacklist.txt
-$blacklist = 'C:\psl\blacklist.txt'
+# Full path to the allowList, e.g. c:\psl\allowList.txt :
+$allowList = 'C:\psl\allowList.txt'
+# Full path to blockList e.g: c:\psl\blockList.txt
+$blockList = 'C:\psl\blockList.txt'
 
 ############################
 # Do not edit beneath here #
@@ -39,12 +39,12 @@ $WinVer = [System.Environment]::OSVersion.Version
 #Deal with the lists:
 $blocklist = @{}
 
-if (test-path $whitelist) { 
-	write-host "Whitelist found" -foregroundcolor green
+if (test-path $allowList) { 
+	write-host "allowList found" -foregroundcolor green
 	} else {
-		# If the whitelist can't be found:
-		Write-host "Unable to find the whitelist file, exiting for your protection." -foregroundcolor red -backgroundcolor gray
-		Write-EventLog -LogName $WriteLog -Message "PSLogonFailures.ps1 cannot load the whitelist.  Exiting for your protection. `n Whitelist claims to be at: $whitelist" -Source $WriteLogSource -EntryType Error -id 1237
+		# If the allowList can't be found:
+		Write-host "Unable to find the allowList file, exiting for your protection." -foregroundcolor red -backgroundcolor gray
+		Write-EventLog -LogName $WriteLog -Message "PSLogonFailures.ps1 cannot load the allowList.  Exiting for your protection. `n allowList claims to be at: $allowList" -Source $WriteLogSource -EntryType Error -id 1237
 		exit
 	}
 
@@ -59,13 +59,13 @@ function DeletePSLFirewallRules {
 	netsh advfirewall firewall del rule name="PSLogonFailures - Block All TCP"
 }
 
-function ProcessBlacklists {
-	write-host Processing blacklists -foregroundcolor yellow
-	if (test-path $blacklist){
-		if ((get-content $blacklist|measure-object).count -gt 0){
-			#Add the blacklist to the $blocklist
-			$blacklist_content = get-content $blacklist
-			foreach ($BlIP in $blacklist_content){
+function ProcessblockLists {
+	write-host Processing blockLists -foregroundcolor yellow
+	if (test-path $blockList){
+		if ((get-content $blockList|measure-object).count -gt 0){
+			#Add the blockList to the $blocklist
+			$blockList_content = get-content $blockList
+			foreach ($BlIP in $blockList_content){
 				if($blocklist.ContainsKey($BlIP)){
 						$blocklist[$BlIP] = $blocklist[$BlIP]+1
 				}else{
@@ -74,15 +74,15 @@ function ProcessBlacklists {
 			}	
 		}
 	} else {
-		Write-EventLog -LogName $WriteLog -Message "PSLogonFailures.ps1 cannot load the blacklist.`n Blacklist claims to be at: $blacklist" -Source $WriteLogSource -EntryType Error -id 1239
+		Write-EventLog -LogName $WriteLog -Message "PSLogonFailures.ps1 cannot load the blockList.`n blockList claims to be at: $blockList" -Source $WriteLogSource -EntryType Error -id 1239
 	}
 	
 }
 
-function ProcessWhitelist{
-	write-host Processing Whitelist -foregroundcolor yellow
-	$whitelistIPs = get-content $whitelist
-	foreach ($ip in $whitelistIPs)
+function ProcessallowList{
+	write-host Processing allowList -foregroundcolor yellow
+	$allowListIPs = get-content $allowList
+	foreach ($ip in $allowListIPs)
 	{
 		if ($blocklist.containskey($ip)){
 			$badwhites = "$badwhites `n $ip"
@@ -169,10 +169,10 @@ function AddFirewallRules {
 		
 }
 
-function BlockBlacklistOnly {
+function BlockblockListOnly {
 	#This will be called if the local security log doesn't have any failed logins.
-	. ProcessBlacklists
-	. ProcessWhitelist
+	. ProcessblockLists
+	. ProcessallowList
 	. AddFirewallRules
 	
 }
@@ -180,7 +180,7 @@ function BlockBlacklistOnly {
 function WriteEndLog{
 	if ($WriteLogEnd -eq 1){
 		if ($WriteLogType -eq 'Error'){
-			Write-EventLog -LogName $WriteLog -Message "Finished PSLogonFailures.ps1.`nThe following IPs were blocked $BlockedServices : `n $remoteIPs `n The following whitelisted IPs are also attacking (or on a blacklist): $badwhites `n Whitelist file: $whitelist" -EntryType $WriteLogType -Source $WriteLogSource -id $WriteLogID
+			Write-EventLog -LogName $WriteLog -Message "Finished PSLogonFailures.ps1.`nThe following IPs were blocked $BlockedServices : `n $remoteIPs `n The following allowListed IPs are also attacking (or on a blockList): $badwhites `n allowList file: $allowList" -EntryType $WriteLogType -Source $WriteLogSource -id $WriteLogID
 		} else {
 			Write-EventLog -LogName $WriteLog -Message "Finished PSLogonFailures.ps1.  There were no failed logon attempts in the security log.  Removing the firewall rule." -Source $WriteLogSource -id $WriteLogID
 		}
@@ -197,7 +197,7 @@ trap [Exception]
         write-host "No Entries (TRAP)"
   
         DeletePSLFirewallRules
-		. BlockBlacklistOnly
+		. BlockblockListOnly
 		WriteEndLog
         exit
     } else { 
@@ -209,7 +209,7 @@ trap [Exception]
 
 if ($WriteLogStart -eq 1){
     # Log the fact this script is starting.
-    Write-EventLog -LogName $WriteLog -Message "Starting PSLogonFailures.ps1.  `n Windows Version $WinVer .  `n Your whitelist: $whitelist" -Source $WriteLogSource -id 1234
+    Write-EventLog -LogName $WriteLog -Message "Starting PSLogonFailures.ps1.  `n Windows Version $WinVer .  `n Your allowList: $allowList" -Source $WriteLogSource -id 1234
 }
 
 $interval = (get-date) - (new-timespan -minutes $minutes)
@@ -220,8 +220,8 @@ if ($WinVer.major -eq 6 -and $WinVer.minor -eq 0){
     $event = get-winevent -FilterHashtable @{ logname=$LogName; ID=4625; StartTime=$interval }
 }
 
-#Add the Blacklist to the $blocklist
-ProcessBlacklists
+#Add the blockList to the $blocklist
+ProcessblockLists
 
     foreach ($ip in $event){
     
@@ -252,8 +252,8 @@ ProcessBlacklists
     
 }
 
-# Deal with the whitelist
-. ProcessWhiteList
+# Deal with the allowList
+. ProcessallowList
 # Remove any stale rules
 . DeletePSLFirewallRules
 # Block attackers to this server and those on the blocklist:
@@ -261,5 +261,5 @@ ProcessBlacklists
 WriteEndLog
 
 #if ($WriteLogEnd -eq 1){
-#    Write-EventLog -LogName $WriteLog -Message "Finished PSLogonFailures.ps1.`nThe following IPs were blocked $BlockedServices : `n $remoteIPs `n The following whitelisted IPs are also attacking: $badwhites `n Whitelist file: $whitelist" -EntryType $WriteLogType -Source $WriteLogSource -id $WriteLogID
+#    Write-EventLog -LogName $WriteLog -Message "Finished PSLogonFailures.ps1.`nThe following IPs were blocked $BlockedServices : `n $remoteIPs `n The following allowListed IPs are also attacking: $badwhites `n allowList file: $allowList" -EntryType $WriteLogType -Source $WriteLogSource -id $WriteLogID
 #}
