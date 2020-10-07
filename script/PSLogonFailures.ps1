@@ -37,7 +37,7 @@ $blockList = 'C:\psl\blockList.txt'
 $WinVer = [System.Environment]::OSVersion.Version
 
 #Deal with the lists:
-$blocklist = @{}
+$blockList = @{}
 
 if (test-path $allowList) { 
 	write-host "allowList found" -foregroundcolor green
@@ -63,13 +63,13 @@ function ProcessblockLists {
 	write-host Processing blockLists -foregroundcolor yellow
 	if (test-path $blockList){
 		if ((get-content $blockList|measure-object).count -gt 0){
-			#Add the blockList to the $blocklist
+			#Add the blockList to the $blockList
 			$blockList_content = get-content $blockList
 			foreach ($BlIP in $blockList_content){
-				if($blocklist.ContainsKey($BlIP)){
-						$blocklist[$BlIP] = $blocklist[$BlIP]+1
+				if($blockList.ContainsKey($BlIP)){
+						$blockList[$BlIP] = $blockList[$BlIP]+1
 				}else{
-						$blocklist.add($BlIP, $threshold)
+						$blockList.add($BlIP, $threshold)
 				}
 			}	
 		}
@@ -84,17 +84,17 @@ function ProcessallowList{
 	$allowListIPs = get-content $allowList
 	foreach ($ip in $allowListIPs)
 	{
-		if ($blocklist.containskey($ip)){
+		if ($blockList.containskey($ip)){
 			$badwhites = "$badwhites `n $ip"
-			$blocklist.remove($ip)
+			$blockList.remove($ip)
 		}
 	}
 }
 
 function AddFirewallRules {
 	$remoteIPS = New-Object System.Text.StringBuilder
-	foreach ($attempt in $blocklist.keys){
-    	if ($blocklist[$attempt] -ge $threshold){
+	foreach ($attempt in $blockList.keys){
+    	if ($blockList[$attempt] -ge $threshold){
 			[void]($remoteIPs.appendformat("{0},",$attempt))
 		}
 
@@ -220,7 +220,7 @@ if ($WinVer.major -eq 6 -and $WinVer.minor -eq 0){
     $event = get-winevent -FilterHashtable @{ logname=$LogName; ID=4625; StartTime=$interval }
 }
 
-#Add the blockList to the $blocklist
+#Add the blockList to the $blockList
 ProcessblockLists
 
     foreach ($ip in $event){
@@ -242,10 +242,10 @@ ProcessblockLists
         $BadIP = $value.matches[0].value
        
        
-       if($blocklist.ContainsKey($BadIP)){
-            $blocklist[$BadIP] = $blocklist[$BadIP]+1
+       if($blockList.ContainsKey($BadIP)){
+            $blockList[$BadIP] = $blockList[$BadIP]+1
        }else{
-            $blocklist.add($BadIP, 1)
+            $blockList.add($BadIP, 1)
        }
 
      }
@@ -256,7 +256,7 @@ ProcessblockLists
 . ProcessallowList
 # Remove any stale rules
 . DeletePSLFirewallRules
-# Block attackers to this server and those on the blocklist:
+# Block attackers to this server and those on the blockList:
 . AddFirewallRules
 WriteEndLog
 
